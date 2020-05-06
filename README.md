@@ -1,7 +1,7 @@
-# ![Prestogres](https://gist.githubusercontent.com/frsyuki/8328440/raw/6c3a19b7132fbbf975155669f308854f70fff1e8/prestogres.png)
-## Informix protocol gateway for Presto
+# ![Informixgress](https://gist.githubusercontent.com/frsyuki/8328440/raw/6c3a19b7132fbbf975155669f308854f70fff1e8/prestogres.png)
+## PostgreSQL protocol gateway for Informix
 
-**Informixgres** is a gateway server that allows clients to use PostgreSQL protocol to run queries on Presto.
+**Informixgres** is a gateway server that allows clients to use PostgreSQL protocol to run queries on Informix.
 
 You can use any PostgreSQL clients (see also *[Limitation](#limitation)* section):
 
@@ -9,9 +9,9 @@ You can use any PostgreSQL clients (see also *[Limitation](#limitation)* section
 * [PostgreSQL ODBC driver](http://psqlodbc.projects.pgfoundry.org/)
 * [PostgreSQL JDBC driver](http://jdbc.postgresql.org/)
 
-Prestogres also offers password-based authentication and SSL.
+Informixgres also offers password-based authentication and SSL.
 
-[![Prestogres internals at Slideshare](https://gist.githubusercontent.com/frsyuki/8328440/raw/1f49948be09fe8c0b04a14c45659d0bfd03f32b8/prestogres-slideshare.png)](http://www.slideshare.net/frsyuki/prestogres-internals/24)
+[![Informixgres internals at Slideshare](https://gist.githubusercontent.com/frsyuki/8328440/raw/1f49948be09fe8c0b04a14c45659d0bfd03f32b8/prestogres-slideshare.png)](http://www.slideshare.net/frsyuki/prestogres-internals/24)
 
 ## Documents
 
@@ -19,7 +19,7 @@ Prestogres also offers password-based authentication and SSL.
 * [Limitation](#limitation)
 * [Installation](#installation)
   * [1. Install PostgreSQL >= 9.3](#1-install-postgresql--93)
-  * [2. Install Prestogres](#2-install-prestogres)
+  * [2. Install Informixgres](#2-install-prestogres)
 * [Running servers](#running-servers)
   * [Setting shmem max parameter](#setting-shmem-max-parameter)
 * [Configuration](#configuration)
@@ -28,16 +28,16 @@ Prestogres also offers password-based authentication and SSL.
   * [external method](#external-method)
 * [FAQ](#faq)
   * [I can connect from localhost but cannot from remote host](#i-can-connect-from-localhost-but-cannot-from-remote-host)
-  * [I can connect to Prestogres but cannot run any queries](#i-can-connect-to-prestogres-but-cannot-run-any-queries)
-  * [All queries by JDBC or ODBC clients fail with "Prestogres doesn't support extended query"](#all-queries-by-jdbc-or-odbc-clients-fail-with-prestogres-doesnt-support-extended-query)
+  * [I can connect to Informixgres but cannot run any queries](#i-can-connect-to-prestogres-but-cannot-run-any-queries)
+  * [All queries by JDBC or ODBC clients fail with "Informixgres doesn't support extended query"](#all-queries-by-jdbc-or-odbc-clients-fail-with-prestogres-doesnt-support-extended-query)
   * [Time zone of timestamp type is wrong](#time-zone-of-timestamp-type-is-wrong")
 
 ---
 
 ## How it works?
 
-Prestogres uses modified version of **[pgpool-II](http://www.pgpool.net/)** to rewrite queries before sending them to PostgreSQL.
-pgpool-II is originally a middleware to provide connection pool and load balancing to PostgreSQL. Prestogres hacked it as following:
+Informixgres uses modified version of **[pgpool-II](http://www.pgpool.net/)** to rewrite queries before sending them to PostgreSQL.
+pgpool-II is originally a middleware to provide connection pool and load balancing to PostgreSQL. Informixgres hacked it as following:
 
 * When a client connects to pgpool-II, the modified pgpool-II runs **SELECT setup\_system\_catalog(...)** statement on PostgreSQL.
   * This function is implemented on PostgreSQL using PL/Python.
@@ -111,7 +111,7 @@ You can install PostgreSQL using [Homebrew](http://brew.sh/).
 brew install postgresql
 ```
 
-### 2. Install Prestogres
+### 2. Install Informixgres
 
 Download the latest release from [releases](https://github.com/treasure-data/prestogres/releases) or clone the [git repository](https://github.com/treasure-data/prestogres). You can install the binary as following:
 
@@ -194,9 +194,9 @@ $ sudo sysctl -w kern.sysv.shmall=1073741824
 ## Configuration
 
 Please read [pgpool-II documentation](http://www.pgpool.net/docs/latest/pgpool-en.html) for most of parameters used in informix.conf file.
-Following parameters are unique to Prestogres:
+Following parameters are unique to Informixgres:
 
-* **presto_server**: address:port of a presto coordinator.
+* **informix_server**: Python/ODBC URL for Informix Server.
 * **presto_catalog**: (optional) catalog name of Presto (such as `hive`, etc.). By default, login database name is used as the catalog name
 * **presto_schema**: (optional) schema name of Presto (such as `hive`, etc.). By default, login database name is used as the schema name
 * **presto_external_auth_prog**: (optional) path to an external authentication program used by `external` authentication moethd. See following *Authentication* section for details.
@@ -205,7 +205,7 @@ You can overwrite these parameters for each connecting users (and databases) usi
 
 ## Authentication
 
-By default, Prestogres accepts all connections from 127.0.0.1 without password and rejects any other connections. You can change this behavior by updating **$prefix/etc/informix\_hba.conf** file.
+By default, Informixgres accepts all connections from 127.0.0.1 without password and rejects any other connections. You can change this behavior by updating **$prefix/etc/informix\_hba.conf** file.
 
 See [sample informix_hba.conf file](prestogres/config/informix_hba.conf) for details. Basic syntax is:
 
@@ -246,7 +246,7 @@ In informix\_hba.conf file, you can set following options to the OPTIONS field:
 * **presto_catalog**: catalog name of Presto, which overwrites `presto_catalog` parameter in informix.conf.
 * **presto_schema**: schema name of Presto, which overwrites `presto_schema` parameter in informix.conf.
 * **presto_user**: user name to run queries on Presto (X-Presto-User). By default, login user name is used. Following `pg_user` parameter doesn't affect this parameter.
-* **pg_database**: (advanced) Overwrite database name on PostgreSQL. By default, login database name is used as-is. If this database does not exist on PostgreSQL, Prestogres automatically creates it.
+* **pg_database**: (advanced) Overwrite database name on PostgreSQL. By default, login database name is used as-is. If this database does not exist on PostgreSQL, Informixgres automatically creates it.
 * **pg_user**: (advanced) Overwrite user name connecting to PostgreSQL. This value should be `prestogres` in most of cases. If you create another superuser on PostgreSQL manually, you may use this parameter.
 
 
@@ -257,7 +257,7 @@ This authentication method runs an external command to authentication an user.
 - Note: This method is still experimental. Interface could be changed.
 - Note: This method requires clients to send password in clear text. It's recommended to enable SSL in informix.conf.
 
-You need to set `presto_external_auth_prog` parameter in informix.conf or `auth_prog` option in informix\_hba.conf. Prestogres runs the program every time when an user connects. The program receives following data through STDIN:
+You need to set `presto_external_auth_prog` parameter in informix.conf or `auth_prog` option in informix\_hba.conf. Informixgres runs the program every time when an user connects. The program receives following data through STDIN:
 
 ```
 user:USER_NAME
@@ -287,17 +287,17 @@ If you want to reject this connection, the program exists with non-0 status code
 
 ### I can connect from localhost but cannot from remote host
 
-Prestogres trusts connections from localhost and rejects any other connections by default.
-To connect Prestogres from a remote host, you need to edit informix\_hba.conf file.
+Informixgres trusts connections from localhost and rejects any other connections by default.
+To connect Informixgres from a remote host, you need to edit informix\_hba.conf file.
 
 See [Authentication](#authentication) section for details.
 
 
-### I can connect to Prestogres but cannot run any queries
+### I can connect to Informixgres but cannot run any queries
 
-Prestogres gets all table information from Presto when you run the first query for each connection. If this initialization fails, all queries fail.
+Informixgres gets all table information from Presto when you run the first query for each connection. If this initialization fails, all queries fail.
 
-Prestogres runs following SQL on Presto to get table information. If this query fails on your Presto, Prestogres doesn't work.
+Informixgres runs following SQL on Presto to get table information. If this query fails on your Presto, Informixgres doesn't work.
 
 ```sql
 select table_schema, table_name, column_name, is_nullable, data_type
@@ -305,11 +305,11 @@ from information_schema.columns
 ```
 
 
-### All queries by JDBC or ODBC clients fail with "Prestogres doesn't support extended query"
+### All queries by JDBC or ODBC clients fail with "Informixgres doesn't support extended query"
 
 PostgreSQL has 2 protocols to run a query: simple query and extended query.
 
-Extended query is a new protocol to support prepared statements (server-side prepared statements). Prestogres supports only simple query.
+Extended query is a new protocol to support prepared statements (server-side prepared statements). Informixgres supports only simple query.
 
 Fortunately, JDBC and ODBC clients implement prepared statements at client-side to be complatible with old PostgreSQL. You need to disable server-side prepared statements and enable the client-side implementation.
 
@@ -320,7 +320,7 @@ If you have interest in the detailed protocol specification: [PostgreSQL Fronten
 
 ### Time zone of timestamp type is wrong
 
-Prestogres checks `timezone` session variable and passes it to Presto (X-Presto-Time-Zone).
+Informixgres checks `timezone` session variable and passes it to Presto (X-Presto-Time-Zone).
 
 * To check timezone session variable: `SHOW timezone`
 * To change the timezone on a session: `SET timezone TO UTC`
@@ -329,6 +329,6 @@ Prestogres checks `timezone` session variable and passes it to Presto (X-Presto-
 
 ___
 
-    Prestogres is licensed under Apache License, Version 2.0.
+    Informixgres is licensed under Apache License, Version 2.0.
     Copyright (C) 2014 Sadayuki Furuhashi
 
