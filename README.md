@@ -1,4 +1,4 @@
-# ![Informixgress](https://gist.githubusercontent.com/frsyuki/8328440/raw/6c3a19b7132fbbf975155669f308854f70fff1e8/prestogres.png)
+# ![Informixgress](inforixgres.png)
 ## PostgreSQL protocol gateway for Informix
 
 **Informixgres** is a gateway server that allows clients to use PostgreSQL protocol to run queries on Informix.
