@@ -1,4 +1,4 @@
-# ![Informixgress](inforixgres.png)
+# ![Informixgress](informixgres.png)
 ## PostgreSQL protocol gateway for Informix
 
 **Informixgres** is a gateway server that allows clients to use PostgreSQL protocol to run queries on Informix.
@@ -11,7 +11,9 @@ You can use any PostgreSQL clients (see also *[Limitation](#limitation)* section
 
 Informixgres also offers password-based authentication and SSL.
 
-[![Informixgres internals at Slideshare](inforixgres.png)](http://www.slideshare.net/frsyuki/prestogres-internals/24)
+Architecture Diagram:
+
+![alt text](informixgres.png "Architecture Diagram")
 
 ## Documents
 
