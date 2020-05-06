@@ -11,7 +11,7 @@ You can use any PostgreSQL clients (see also *[Limitation](#limitation)* section
 
 Informixgres also offers password-based authentication and SSL.
 
-[![Informixgres internals at Slideshare](https://gist.githubusercontent.com/frsyuki/8328440/raw/1f49948be09fe8c0b04a14c45659d0bfd03f32b8/prestogres-slideshare.png)](http://www.slideshare.net/frsyuki/prestogres-internals/24)
+[![Informixgres internals at Slideshare](inforixgres.png)](http://www.slideshare.net/frsyuki/prestogres-internals/24)
 
 ## Documents
 
