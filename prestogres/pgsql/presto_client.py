@@ -1,6 +1,8 @@
 import os
-import httplib
 import time
+import IfxPy
+import IfxPyDbi as dbapi2
+from builtins import str
 
 try: import simplejson as json
 except ImportError: import json
@@ -51,15 +53,17 @@ class StatementStats(object):
                 )
 
 class Column(object):
-    def __init__(self, name, type):
+    def __init__(self, name, type, len):
         self.name = name
         self.type = type
+        self.len = len
 
     @classmethod
     def decode_dict(cls, dic):
         return Column(
                 name=dic.get("name"),
                 type=dic.get("type"),
+                len=dic.get("len"),
                 )
 
 class ErrorLocation(object):
@@ -113,27 +117,19 @@ class QueryError(object):
                 )
 
 class QueryResults(object):
-    def __init__(self, id, info_uri=None, partial_cache_uri=None, next_uri=None, columns=None, data=None, stats=None, error=None):
-        self.id = id
-        self.info_uri = info_uri
-        self.partial_cache_uri = partial_cache_uri
-        self.next_uri = next_uri
+    def __init__(self, columns=None, data=None, stats=None, error=None):
         self.columns = columns
         self.data = data
         self.stats = stats
         self.error = error
 
     @classmethod
-    def decode_dict(cls, dic):
+    def decode_dict(cls, columns, data):
         return QueryResults(
-                id=dic.get("id"),
-                info_uri=dic.get("infoUri"),
-                partial_cache_uri=dic.get("partialCancelUri"),
-                next_uri=dic.get("nextUri"),
-                columns=map(Column.decode_dict, dic["columns"]) if "columns" in dic else None,
-                data=dic.get("data"),
-                stats=StatementStats.decode_dict(dic["stats"]) if "stats" in dic else None,
-                error=QueryError.decode_dict(dic["error"]) if "error" in dic else None,
+                columns=columns,
+                data=data,
+                stats=None,
+                error=None
                 )
 
 class PrestoException(Exception):
@@ -154,26 +150,9 @@ class PrestoQueryException(PrestoException):
         self.error_code = error_code
         self.failure_info = failure_info
 
-class PrestoHeaders(object):
-    PRESTO_USER = "X-Presto-User"
-    PRESTO_SOURCE = "X-Presto-Source"
-    PRESTO_CATALOG = "X-Presto-Catalog"
-    PRESTO_SCHEMA = "X-Presto-Schema"
-    PRESTO_TIME_ZONE = "X-Presto-Time-Zone"
-    PRESTO_LANGUAGE = "X-Presto-Language"
-
-    PRESTO_CURRENT_STATE = "X-Presto-Current-State"
-    PRESTO_MAX_WAIT = "X-Presto-Max-Wait"
-    PRESTO_MAX_SIZE = "X-Presto-Max-Size"
-    PRESTO_PAGE_SEQUENCE_ID = "X-Presto-Page-Sequence-Id"
-
 class StatementClient(object):
-    HEADERS = {
-            "User-Agent": "presto-python/%s" % VERSION
-            }
-
-    def __init__(self, http_client, query, **options):
-        self.http_client = http_client
+    def __init__(self, conn, query, **options):
+        self.conn = conn
         self.query = query
         self.options = options
 
@@ -183,30 +162,43 @@ class StatementClient(object):
         self._post_query_request()
 
     def _post_query_request(self):
-        headers = StatementClient.HEADERS.copy()
 
-        if self.options.get("user") is not None:
-            headers[PrestoHeaders.PRESTO_USER] = self.options["user"]
-        if self.options.get("source") is not None:
-            headers[PrestoHeaders.PRESTO_SOURCE] = self.options["source"]
-        if self.options.get("catalog") is not None:
-            headers[PrestoHeaders.PRESTO_CATALOG] = self.options["catalog"]
-        if self.options.get("schema") is not None:
-            headers[PrestoHeaders.PRESTO_SCHEMA] = self.options["schema"]
-        if self.options.get("time_zone") is not None:
-            headers[PrestoHeaders.PRESTO_TIME_ZONE] = self.options["time_zone"]
-        if self.options.get("language") is not None:
-            headers[PrestoHeaders.PRESTO_LANGUAGE] = self.options["language"]
+        self.cur = self.conn.cursor()
+        rowcnt = self.cur.execute (str(self.query))
+        if self.cur.description:
+            rows = self.cur.fetchall()
+            cols = []
+            num_columns = IfxPy.num_fields(self.cur.stmt_handler)
+            for column_index in range(num_columns):
+                name = IfxPy.field_name(self.cur.stmt_handler, column_index)
+                type = IfxPy.field_type(self.cur.stmt_handler, column_index)
+                len = IfxPy.field_precision(self.cur.stmt_handler, column_index)
+                type = type.upper()
+                if (type == "STRING"):
+                   type = "character(" + str(len) + ")"
+                cols.append(Column(name, type, len))
 
-        self.http_client.request("POST", "/v1/statement", self.query, headers)
-        response = self.http_client.getresponse()
-        body = response.read()
-
-        if response.status != 200:
-            raise PrestoHttpException(response.status, "Failed to start query: %s" % body)
-
-        dic = json.loads(body)
-        self.results = QueryResults.decode_dict(dic)
+            for c in cols:
+                print c.name 
+                print c.type 
+            print "Done for now..."
+            self.results = QueryResults.decode_dict(columns=cols, data=rows)
+        else:
+            cols = []
+            rows = []
+            cols.append(Column("count", "INT", 11))
+            tupl = ()
+            tupl = tupl + (int(rowcnt),)
+            rows.append(tupl)
+            for c in cols:
+                print c.name 
+                print c.type 
+            print rows
+            print "Done for now..."
+            self.results = QueryResults.decode_dict(columns=cols, data=rows)
+            self.conn.commit()
+            #self.close()
+   
 
     @property
     def is_query_failed(self):
@@ -218,34 +210,30 @@ class StatementClient(object):
 
     @property
     def has_next(self):
-        return self.results.next_uri is not None
+        return None
+        #return self.results.next_uri is not None
 
     def advance(self):
         if self.closed or not self.has_next:
             return False
+        return False
 
-        uri = self.results.next_uri
         start = time.time()
         attempts = 0
+        row = None
 
         while True:
             try:
-                self.http_client.request("GET", uri)
+                #row = self.cur.fetchrow()
+                row = None
             except Exception as e:
                 self.exception = e
+                print ('ERROR5: Nagaraju')
                 raise
 
-            response = self.http_client.getresponse()
-            body = response.read()
-
-            if response.status == 200 and body:
-                self.results = QueryResults.decode_dict(json.loads(body))
+            if row:
+                self.results = QueryResults.decode_dict(None, row)
                 return True
-
-            if response.status != 503:  # retry on 503 Service Unavailable
-                # deterministic error
-                self.exception = PrestoHttpException(response.status, "Error fetching next at %s returned %s: %s" % (uri, response.status, body))  # TODO error class
-                raise self.exception
 
             if (time.time() - start) > 2*60*60 or self.closed:
                 break
@@ -254,26 +242,28 @@ class StatementClient(object):
         raise self.exception
 
     def cancel_leaf_stage(self):
-        if self.results.next_uri is not None:
-            self.http_client.request("DELETE", self.results.next_uri)
-            response = self.http_client.getresponse()
-            response.read()
-            return response.status / 100 == 2
         return False
 
     def close(self):
         if self.closed:
             return
 
-        cancel_leaf_stage(self)
+        self.cancel_leaf_stage()
 
         self.closed = True
 
 class Query(object):
     @classmethod
     def start(cls, query, **options):
-        http_client = httplib.HTTPConnection(host=options["server"], timeout=options.get("http_timeout", 300))
-        return Query(StatementClient(http_client, query, **options))
+        ConStr = "SERVER=informix;DATABASE=test;HOST=127.0.0.1;SERVICE=60000;UID=informix;PWD=changeme;"
+        try:
+            conn = dbapi2.connect( str(ConStr), str(''), str(''), str(''), str(''))
+        except Exception as e:
+            print ('ERROR: Connect failed')
+            print ( e )
+            quit()
+
+        return Query(StatementClient(conn, query, **options))
 
     def __init__(self, client):
         self.client = client
@@ -287,11 +277,16 @@ class Query(object):
             pass
 
     def columns(self):
-        self._wait_for_columns()
+        print ("Nagaraju: called columns()")
+        #self._wait_for_columns()
 
-        if not self.client.is_query_succeeded:
-            self._raise_error()
+        #if not self.client.is_query_succeeded:
+        #    self._raise_error()
 
+        if self.client.results.columns is None:
+           print ("Nagaraju: columns are None")
+        else:
+           print self.client.results.columns
         return self.client.results.columns
 
     def results(self):
@@ -302,6 +297,7 @@ class Query(object):
         if not client.is_query_succeeded:
             self._raise_error()
 
+        print "Nagaraju : calling columns from results()"
         if self.columns() is None:
             raise PrestoException("Query %s has no columns" % client.results.id)
 
@@ -310,12 +306,15 @@ class Query(object):
                 break
 
             for row in client.results.data:
-                yield row
+                print ("Nagaraju: yield row")
+                yield list(row)
 
             if not client.advance():
+                print ("Nagaraju: results() advance no data")
                 break
 
             if client.results.data is None:
+                print ("Nagaraju: results() no data")
                 break
 
     def cancel(self):
@@ -328,10 +327,12 @@ class Query(object):
         if self.client.closed:
             raise PrestoClientException("Query aborted by user")
         elif self.client.exception is not None:
+            print ('ERROR2: Nagaraju')
             raise self.client.exception
         elif self.client.is_query_failed:
             results = self.client.results
             error = results.error
+            print ('ERROR3: Nagaraju')
             if error is None:
                 raise PrestoQueryException("Query %s failed: (unknown reason)" % results.id, None, None)
             raise PrestoQueryException("Query %s failed: %s" % (results.id, error.message), results.id, error.error_code, error.failure_info)

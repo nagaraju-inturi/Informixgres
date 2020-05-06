@@ -11,6 +11,7 @@ import re
 PG_NAMEDATALEN = 64
 
 JSON_TYPE_PATTERN = re.compile("^(?:row|array|map)(?![a-zA-Z])", re.IGNORECASE)
+DATETIME_TYPE_PATTERN = re.compile("^datetime", re.IGNORECASE)
 
 # See the document about system column names: http://www.postgresql.org/docs/9.3/static/ddl-system-columns.html
 SYSTEM_COLUMN_NAMES = set(["oid", "tableoid", "xmin", "cmin", "xmax", "cmax", "ctid"])
@@ -19,10 +20,20 @@ SYSTEM_COLUMN_NAMES = set(["oid", "tableoid", "xmin", "cmin", "xmax", "cmax", "c
 def _pg_result_type(presto_type):
     if presto_type == "varchar":  # for old Presto
         return "varchar(255)"
+    elif presto_type.lower() == "string":
+        return "character"
     elif presto_type == "varbinary":
+        return "bytea"
+    elif presto_type == "byte":
         return "bytea"
     elif presto_type == "double":
         return "double precision"
+    elif presto_type == "smallfloat":
+        return "real"
+    elif presto_type == "integer8":
+        return "bigint"
+    elif presto_type == "serial8":
+        return "bigserial"
     elif JSON_TYPE_PATTERN.match(presto_type):
         return "json"  # TODO record or anyarray???
     elif presto_type == "tinyint":
@@ -35,10 +46,20 @@ def _pg_result_type(presto_type):
 def _pg_table_type(presto_type):
     if presto_type == "varchar":  # for old Presto
         return "varchar(255)"
+    elif presto_type.lower() == "string":
+        return "character"
     elif presto_type == "varbinary":
+        return "bytea"
+    elif presto_type == "byte":
         return "bytea"
     elif presto_type == "double":
         return "double precision"
+    elif presto_type == "smallfloat":
+        return "real"
+    elif presto_type == "integer8":
+        return "bigint"
+    elif presto_type == "serial8":
+        return "bigserial"
     elif JSON_TYPE_PATTERN.match(presto_type):
         return "json"  # TODO record or anyarray???
     elif presto_type == "tinyint":
@@ -79,8 +100,25 @@ def _build_create_temp_table_sql(table_name, column_names, column_types):
 
         create_sql.append(plpy.quote_ident(column_name))
         create_sql.append(" ")
+        if (column_type.lower() == "smallfloat"):
+            column_type = "REAL"
+        if (column_type.lower() == "string"):
+            column_type = "character"
+        elif (column_type.lower() == "byte"):
+            column_type = "bytea"
+        elif (column_type.lower() == "integer8"):
+            column_type = "bigint"
+        elif (column_type.lower() == "serial8"):
+            column_type = "bigserial"
+        elif (column_type.lower() == "datetime"):
+            column_type = "timestamp"
         create_sql.append(column_type)
-
+        if (column_type == "OPAQUE FIXED"):
+           return None
+        if (column_type == "OPAQUE VARIABLE"):
+           return None
+        if (column_type == "UNKNOWN DATA TYPE"):
+           return None
     create_sql.append("\n)")
     return ''.join(create_sql)
 
@@ -95,7 +133,26 @@ def _build_create_table(schema_name, table_name, column_names, column_types, not
         else:
             alter_sql.append(",\n  ")
 
+        if (column_type.lower() == "smallfloat"):
+            column_type = "REAL"
+        if (column_type.lower() == "string"):
+            column_type = "character"
+        elif (column_type.lower() == "byte"):
+            column_type = "bytea"
+        elif (column_type.lower() == "integer8"):
+            column_type = "bigint"
+        elif (column_type.lower() == "serial8"):
+            column_type = "bigserial"
+        elif (column_type.lower() == "datetime"):
+            column_type = "timestamp"
         alter_sql.append("%s %s" % (plpy.quote_ident(column_name), column_type))
+
+        if (column_type == "OPAQUE FIXED"):
+           return None
+        if (column_type == "OPAQUE VARIABLE"):
+           return None
+        if (column_type == "UNKNOWN DATA TYPE"):
+           return None
 
         if not_null:
             alter_sql.append(" not null")
@@ -163,7 +220,7 @@ class SessionData(object):
 
 session = SessionData()
 
-def start_presto_query(presto_server, presto_user, presto_catalog, presto_schema, function_name, query):
+def start_presto_query(presto_server, presto_user, presto_catalog, presto_schema, function_name, querystr):
     try:
         # preserve search_path if explicitly set
         search_path = _get_session_search_path_array()
@@ -174,24 +231,38 @@ def start_presto_query(presto_server, presto_user, presto_catalog, presto_schema
         # start query
         client = presto_client.Client(server=presto_server, user=presto_user, catalog=presto_catalog, schema=presto_schema, time_zone=_get_session_time_zone())
 
-        query = client.query(query)
+        query = client.query(querystr)
         session.query_auto_close = QueryAutoClose(query)
+           
         try:
             # result schema
             column_names = []
             column_types = []
             for column in query.columns():
                 column_names.append(column.name)
-                column_types.append(_pg_result_type(column.type))
+                column_types.append(str(_pg_result_type(column.type)))
+                print column.name
+                print column.type
 
+            print "column name count"
+            print len(column_names)
+            if len(column_names) <= 0:
+                column_names.append("count")
+                column_types.append("INT")
+            print column_names
+            print column_types
             column_names = _rename_duplicated_column_names(column_names, "a query result")
+            print column_names
+            print column_types
             session.query_auto_close.column_names = column_names
             session.query_auto_close.column_types = column_types
 
             # CREATE TABLE for return type of the function
             type_name = function_name + "_type"
+            print type_name
             create_type_sql = _build_create_temp_table_sql(type_name, column_names, column_types)
 
+            print create_type_sql
             # CREATE FUNCTION
             create_function_sql = \
                 """
@@ -206,17 +277,29 @@ def start_presto_query(presto_server, presto_user, presto_catalog, presto_schema
             # run statements
             plpy.execute("drop table if exists pg_temp.%s cascade" % \
                     (plpy.quote_ident(type_name)))
-            plpy.execute(create_type_sql)
+            if create_type_sql:
+                plpy.execute(create_type_sql)
+            print "Nagaraju: create_type_sql done"
+            print create_type_sql
             plpy.execute(create_function_sql)
+            print "Nagaraju: create_function_sql done"
+            print create_function_sql
 
             query = None
 
+        except Exception as e:
+            print ('ERROR7: Nagaraju')
+            print ( e )
         finally:
             if query is not None:
                 # close query
                 session.query_auto_close = None
 
-    except (plpy.SPIError, presto_client.PrestoException) as e:
+    #except (plpy.SPIError, presto_client.PrestoException) as e:
+    except Exception as e:
+        print ('ERROR6: Nagaraju')
+        print ( e )
+
         # PL/Python converts an exception object in Python to an error message in PostgreSQL
         # using exception class name if exc.__module__ is either of "builtins", "exceptions",
         # or "__main__". Otherwise using "module.name" format. Set __module__ = "__module__"
@@ -243,7 +326,10 @@ def fetch_presto_query_results():
         else:
             return QueryAutoCloseIterator(results, query_auto_close)
 
-    except (plpy.SPIError, presto_client.PrestoException) as e:
+    #except (plpy.SPIError, presto_client.PrestoException) as e:
+    except Exception as e:
+        print ('ERROR6: Nagaraju')
+        print ( e )
         e.__class__.__module__ = "__main__"
         raise
 
@@ -331,7 +417,8 @@ def setup_system_catalog(presto_server, presto_user, presto_catalog, presto_sche
             column_names = _rename_duplicated_column_names(column_names,
                     "%s.%s table" % (plpy.quote_ident(schema_name), plpy.quote_ident(table_name)))
             create_sql = _build_create_table(schema_name, table_name, column_names, column_types, not_nulls)
-            plpy.execute(create_sql)
+            if create_sql:
+                plpy.execute(create_sql)
 
         # grant access on the schema to the restricted user so that
         # pg_table_is_visible(reloid) used by \d of psql command returns true
