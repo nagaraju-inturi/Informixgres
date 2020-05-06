@@ -399,7 +399,13 @@ void pool_where_to_send(POOL_QUERY_CONTEXT *query_context, char *query, Node *no
 				break;
 			case PRESTOGRES_BEGIN_COMMIT:
 				/* single begin/commit */
-				prestogres_rewrite_mode = REWRITE_NONE;
+			        prestogres_rewrite_mode = REWRITE_NONE;
+/*
+                                if (is_start_transaction_query(node))
+				    prestogres_rewrite_mode = REWRITE_NONE;
+                                else
+				    prestogres_rewrite_mode = REWRITE_PRESTO;
+*/
 				break;
 			case PRESTOGRES_PRESTO_CURSOR:
 				/* single cursor uses partial rewrite */
@@ -1825,7 +1831,7 @@ PRESTOGRES_DEST prestogres_send_to_where(Node *node)
 	 * CREATE TABLE
 	 * CREATE TABLE ... AS SELECT
 	 */
-	if (IsA(node, SelectStmt) || IsA(node, InsertStmt) || IsA(node, CreateStmt) || IsA(node, CreateTableAsStmt))
+	if (IsA(node, SelectStmt) || IsA(node, InsertStmt) || IsA(node, UpdateStmt) || IsA(node, DeleteStmt) ||  IsA(node, CreateStmt) || IsA(node, CreateTableAsStmt))
 	{
 		if (pool_has_system_catalog(node))
 		{
