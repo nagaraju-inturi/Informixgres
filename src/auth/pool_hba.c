@@ -71,7 +71,7 @@ static char * next_token_expand(const char *filename, FILE *file);
 static POOL_STATUS CheckMd5Auth(char *username);
 
 /* prestogres: instanciate Presto session information declared at pool.h */
-const char* presto_server = NULL;
+const char* informix_server = NULL;
 const char* presto_user = NULL;
 const char* presto_catalog = NULL;
 const char* presto_schema = NULL;
@@ -1436,8 +1436,8 @@ static bool prestogres_hba_set_session_info(POOL_CONNECTION *frontend, const cha
 {
 	ereport(DEBUG1, (errmsg("presto_external_auth_prog: key '%s' value '%s'", key, value)));
 
-	if (strcmp(key, "presto_server") == 0) {
-		presto_server = pstrdup(value);
+	if (strcmp(key, "informix_server") == 0) {
+		informix_server = pstrdup(value);
 		return true;
 	} else if (strcmp(key, "presto_user") == 0) {
 		presto_user = pstrdup(value);
@@ -1657,8 +1657,8 @@ void prestogres_init_hba(StartupPacket *sp)
 {
 	pool_user = strdup(sp->user);
 	pool_database = strdup(sp->database);
-	if (presto_server == NULL) {
-		presto_server = pool_config->presto_server;
+	if (informix_server == NULL) {
+		informix_server = pool_config->informix_server;
 	}
 	if (presto_user == NULL) {
 		presto_user = pool_user;
@@ -1677,7 +1677,7 @@ void prestogres_init_hba(StartupPacket *sp)
 			presto_schema = pool_config->presto_schema;
 		}
 	}
-	ereport(DEBUG1, (errmsg("prestogres_init_hba: presto_server: %s", presto_server)));
+	ereport(DEBUG1, (errmsg("prestogres_init_hba: informix_server: %s", informix_server)));
 	ereport(DEBUG1, (errmsg("prestogres_init_hba: presto_user: %s", presto_user)));
 	ereport(DEBUG1, (errmsg("prestogres_init_hba: presto_catalog: %s", presto_catalog)));
 	ereport(DEBUG1, (errmsg("prestogres_init_hba: presto_schema: %s", presto_schema)));

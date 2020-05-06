@@ -1,7 +1,7 @@
 # ![Prestogres](https://gist.githubusercontent.com/frsyuki/8328440/raw/6c3a19b7132fbbf975155669f308854f70fff1e8/prestogres.png)
-## PostgreSQL protocol gateway for Presto
+## Informix protocol gateway for Presto
 
-**Prestogres** is a gateway server that allows clients to use PostgreSQL protocol to run queries on Presto.
+**Informixgres** is a gateway server that allows clients to use PostgreSQL protocol to run queries on Presto.
 
 You can use any PostgreSQL clients (see also *[Limitation](#limitation)* section):
 
@@ -136,7 +136,7 @@ You can use `prestogres-ctl` command to setup & run them as following:
 
 ```sh
 # 1. Configure configuration file (at least presto_server parameter):
-$ vi /usr/local/etc/prestogres.conf
+$ vi /usr/local/etc/informix.conf
 
 # 2. Create a data directory:
 $ prestogres-ctl create pgdata
@@ -193,7 +193,7 @@ $ sudo sysctl -w kern.sysv.shmall=1073741824
 
 ## Configuration
 
-Please read [pgpool-II documentation](http://www.pgpool.net/docs/latest/pgpool-en.html) for most of parameters used in prestogres.conf file.
+Please read [pgpool-II documentation](http://www.pgpool.net/docs/latest/pgpool-en.html) for most of parameters used in informix.conf file.
 Following parameters are unique to Prestogres:
 
 * **presto_server**: address:port of a presto coordinator.
@@ -201,13 +201,13 @@ Following parameters are unique to Prestogres:
 * **presto_schema**: (optional) schema name of Presto (such as `hive`, etc.). By default, login database name is used as the schema name
 * **presto_external_auth_prog**: (optional) path to an external authentication program used by `external` authentication moethd. See following *Authentication* section for details.
 
-You can overwrite these parameters for each connecting users (and databases) using prestogres\_hba.conf file. See also following *Authentication* section.
+You can overwrite these parameters for each connecting users (and databases) using informix\_hba.conf file. See also following *Authentication* section.
 
 ## Authentication
 
-By default, Prestogres accepts all connections from 127.0.0.1 without password and rejects any other connections. You can change this behavior by updating **$prefix/etc/prestogres\_hba.conf** file.
+By default, Prestogres accepts all connections from 127.0.0.1 without password and rejects any other connections. You can change this behavior by updating **$prefix/etc/informix\_hba.conf** file.
 
-See [sample prestogres_hba.conf file](prestogres/config/prestogres_hba.conf) for details. Basic syntax is:
+See [sample informix_hba.conf file](prestogres/config/informix_hba.conf) for details. Basic syntax is:
 
 ```conf
 # TYPE  DATABASE  USER    CIDR-ADDRESS             METHOD        OPTIONS
@@ -240,11 +240,11 @@ $ prestogres-pg_md5 -pm -u myuser
 password: (enter password here)
 ```
 
-In prestogres\_hba.conf file, you can set following options to the OPTIONS field:
+In informix\_hba.conf file, you can set following options to the OPTIONS field:
 
-* **presto_server**: address:port of a presto coordinator, which overwrites `presto_servers` parameter in prestogres.conf.
-* **presto_catalog**: catalog name of Presto, which overwrites `presto_catalog` parameter in prestogres.conf.
-* **presto_schema**: schema name of Presto, which overwrites `presto_schema` parameter in prestogres.conf.
+* **informix_server**: Python and ODBC URL for Informix database server. URL of Informix coordinator, which overwrites `informix_servers` parameter in informix.conf.
+* **presto_catalog**: catalog name of Presto, which overwrites `presto_catalog` parameter in informix.conf.
+* **presto_schema**: schema name of Presto, which overwrites `presto_schema` parameter in informix.conf.
 * **presto_user**: user name to run queries on Presto (X-Presto-User). By default, login user name is used. Following `pg_user` parameter doesn't affect this parameter.
 * **pg_database**: (advanced) Overwrite database name on PostgreSQL. By default, login database name is used as-is. If this database does not exist on PostgreSQL, Prestogres automatically creates it.
 * **pg_user**: (advanced) Overwrite user name connecting to PostgreSQL. This value should be `prestogres` in most of cases. If you create another superuser on PostgreSQL manually, you may use this parameter.
@@ -255,9 +255,9 @@ In prestogres\_hba.conf file, you can set following options to the OPTIONS field
 This authentication method runs an external command to authentication an user.
 
 - Note: This method is still experimental. Interface could be changed.
-- Note: This method requires clients to send password in clear text. It's recommended to enable SSL in prestogres.conf.
+- Note: This method requires clients to send password in clear text. It's recommended to enable SSL in informix.conf.
 
-You need to set `presto_external_auth_prog` parameter in prestogres.conf or `auth_prog` option in prestogres\_hba.conf. Prestogres runs the program every time when an user connects. The program receives following data through STDIN:
+You need to set `presto_external_auth_prog` parameter in informix.conf or `auth_prog` option in informix\_hba.conf. Prestogres runs the program every time when an user connects. The program receives following data through STDIN:
 
 ```
 user:USER_NAME
@@ -288,7 +288,7 @@ If you want to reject this connection, the program exists with non-0 status code
 ### I can connect from localhost but cannot from remote host
 
 Prestogres trusts connections from localhost and rejects any other connections by default.
-To connect Prestogres from a remote host, you need to edit prestogres\_hba.conf file.
+To connect Prestogres from a remote host, you need to edit informix\_hba.conf file.
 
 See [Authentication](#authentication) section for details.
 

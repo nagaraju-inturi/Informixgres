@@ -1,5 +1,5 @@
 import plpy
-import presto_client
+import informix_client
 from collections import namedtuple
 from copy import copy
 import time
@@ -220,7 +220,7 @@ class SessionData(object):
 
 session = SessionData()
 
-def start_presto_query(presto_server, presto_user, presto_catalog, presto_schema, function_name, querystr):
+def start_informix_query(informix_server, presto_user, presto_catalog, presto_schema, function_name, querystr):
     try:
         # preserve search_path if explicitly set
         search_path = _get_session_search_path_array()
@@ -229,7 +229,7 @@ def start_presto_query(presto_server, presto_user, presto_catalog, presto_schema
             presto_schema = search_path[0]
 
         # start query
-        client = presto_client.Client(server=presto_server, user=presto_user, catalog=presto_catalog, schema=presto_schema, time_zone=_get_session_time_zone())
+        client = informix_client.Client(server=informix_server, user=presto_user, catalog=presto_catalog, schema=presto_schema, time_zone=_get_session_time_zone())
 
         query = client.query(querystr)
         session.query_auto_close = QueryAutoClose(query)
@@ -268,8 +268,8 @@ def start_presto_query(presto_server, presto_user, presto_catalog, presto_schema
                 """
                 create or replace function pg_temp.%s()
                 returns setof pg_temp.%s as $$
-                    import prestogres
-                    return prestogres.fetch_presto_query_results()
+                    import informix
+                    return informix.fetch_informix_query_results()
                 $$ language plpythonu
                 """ % \
                 (plpy.quote_ident(function_name), plpy.quote_ident(type_name))
@@ -295,7 +295,7 @@ def start_presto_query(presto_server, presto_user, presto_catalog, presto_schema
                 # close query
                 session.query_auto_close = None
 
-    #except (plpy.SPIError, presto_client.PrestoException) as e:
+    #except (plpy.SPIError, informix_client.PrestoException) as e:
     except Exception as e:
         print ('ERROR6: Nagaraju')
         print ( e )
@@ -307,7 +307,7 @@ def start_presto_query(presto_server, presto_user, presto_catalog, presto_schema
         e.__class__.__module__ = "__main__"
         raise
 
-def fetch_presto_query_results():
+def fetch_informix_query_results():
     try:
         # TODO should throw an exception?
         #if session.query_auto_close is None:
@@ -326,7 +326,7 @@ def fetch_presto_query_results():
         else:
             return QueryAutoCloseIterator(results, query_auto_close)
 
-    #except (plpy.SPIError, presto_client.PrestoException) as e:
+    #except (plpy.SPIError, informix_client.PrestoException) as e:
     except Exception as e:
         print ('ERROR6: Nagaraju')
         print ( e )
@@ -335,13 +335,13 @@ def fetch_presto_query_results():
 
 Column = namedtuple("Column", ("name", "type", "nullable"))
 
-def setup_system_catalog(presto_server, presto_user, presto_catalog, presto_schema, access_role):
+def setup_system_catalog(informix_server, presto_user, presto_catalog, presto_schema, access_role):
     search_path = _get_session_search_path_array()
     if search_path == ['$user', 'public']:
         # search_path is default value.
         plpy.execute("set search_path to %s" % plpy.quote_ident(presto_schema))
 
-    client = presto_client.Client(server=presto_server, user=presto_user, catalog=presto_catalog, schema='default')
+    client = informix_client.Client(server=informix_server, user=presto_user, catalog=presto_catalog, schema='default')
 
     # get table list
     sql = "select table_schema, table_name, column_name, is_nullable, data_type" \

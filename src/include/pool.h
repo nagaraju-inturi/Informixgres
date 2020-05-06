@@ -63,13 +63,13 @@
 #define NAMEDATALEN 64
 
 /* configuration file name */
-#define POOL_CONF_FILE_NAME "prestogres.conf"
+#define POOL_CONF_FILE_NAME "informix.conf"
 
 /* PCP user/password file name */
-#define PCP_PASSWD_FILE_NAME "prestogres_pcp.conf"
+#define PCP_PASSWD_FILE_NAME "informix_pcp.conf"
 
 /* HBA configuration file name */
-#define HBA_CONF_FILE_NAME "prestogres_hba.conf"
+#define HBA_CONF_FILE_NAME "informix_hba.conf"
 
 /* pid file directory */
 #define DEFAULT_LOGDIR "/tmp"
@@ -690,7 +690,7 @@ extern int connect_unix_domain_socket_by_port(int port, char *socket_dir, bool r
 extern int pool_pool_index(void);
 
 /* prestogres: Presto session information used by this PostgreSQL session instanciated at pool_hba.c */
-extern const char* presto_server;
+extern const char* informix_server;
 extern const char* presto_user;
 extern const char* presto_catalog;
 extern const char* presto_schema;

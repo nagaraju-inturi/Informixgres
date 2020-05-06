@@ -98,7 +98,7 @@ typedef struct {
 	int enable_pool_hba;		/* 0:false, 1:true - enables pool_hba.conf file authentication */
 	char *pool_passwd;	/* pool_passwd file name. "" disables pool_passwd */
 
-	char *presto_server;	/* prestogres: Presto default server address, and optionally :port */
+	char *informix_server;	/* informixgres: Informix server address URL */
 	char *presto_catalog;	/* prestogres: Presto default catalog name */
 	char *presto_schema;	/* prestogres: Presto default schema name */
 	char *presto_external_auth_prog;	/* prestogres: Presto default external authentication program */

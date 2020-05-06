@@ -4,12 +4,12 @@ bin/ctl: bin/ctl.in
 
 bin_SCRIPTS = bin/ctl
 
-sysconf_DATA = config/prestogres.conf \
-			   config/prestogres_hba.conf \
-			   config/prestogres_passwd
+sysconf_DATA = config/informix.conf \
+			   config/informix_hba.conf \
+			   config/informix_passwd
 
-pkgdata_DATA = pgsql/presto_client.py \
-			   pgsql/prestogres.py \
+pkgdata_DATA = pgsql/informix_client.py \
+			   pgsql/informix.py \
 			   pgsql/setup.sql \
 			   config/postgresql.conf
 

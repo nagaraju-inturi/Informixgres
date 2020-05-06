@@ -2099,12 +2099,12 @@ static void run_and_rewrite_presto_query(POOL_SESSION_CONTEXT* session_context, 
 	con = CONNECTION(backend, session_context->load_balance_node_id);
 	char* original_query = pstrdup(query_context->original_query);
 
-	/* build start_presto_query */
+	/* build start_informix_query */
 	buffer = rewrite_query_string_buffer;
 	bufend = buffer + sizeof(rewrite_query_string_buffer);
 
-	buffer = strcpy_capped(buffer, bufend - buffer, "select prestogres_catalog.start_presto_query(E'");
-	buffer = strcpy_capped_escaped(buffer, bufend - buffer, presto_server, "'\\");
+	buffer = strcpy_capped(buffer, bufend - buffer, "select prestogres_catalog.start_informix_query(E'");
+	buffer = strcpy_capped_escaped(buffer, bufend - buffer, informix_server, "'\\");
 	buffer = strcpy_capped(buffer, bufend - buffer, "', E'");
 	buffer = strcpy_capped_escaped(buffer, bufend - buffer, presto_user, "'\\");
 	buffer = strcpy_capped(buffer, bufend - buffer, "', E'");
@@ -2137,7 +2137,7 @@ static void run_and_rewrite_presto_query(POOL_SESSION_CONTEXT* session_context, 
 		// TODO query rewriting is necessary because some BI tools assumes PostgreSQL supports INTEGER type
 		//      but Presto supports only BIGINT, for example. However, t's hard work to add rewriting rule
 		//      here in C as new incompatibility is found. An solution is to run lexer here and pass indexes
-		//      of the tokens using int[] type to start_presto_query (PL/Python). We can implement rewriting
+		//      of the tokens using int[] type to start_informix_query (PL/Python). We can implement rewriting
 		//      rule in Python and easily change them.
 		replace_ident(query, "integer", "AS INTEGER)", -3, "bigint");
 		// and FLOAT
@@ -2402,7 +2402,7 @@ void prestogres_init_system_catalog()
 		bufend = buffer + sizeof(rewrite_query_string_buffer);
 
 		buffer = strcpy_capped(buffer, bufend - buffer, "select 1 from (select prestogres_catalog.setup_system_catalog(E'");
-		buffer = strcpy_capped_escaped(buffer, bufend - buffer, presto_server, "'\\");
+		buffer = strcpy_capped_escaped(buffer, bufend - buffer, informix_server, "'\\");
 		buffer = strcpy_capped(buffer, bufend - buffer, "', E'");
 		buffer = strcpy_capped_escaped(buffer, bufend - buffer, presto_user, "'\\");
 		buffer = strcpy_capped(buffer, bufend - buffer, "', E'");
@@ -2416,7 +2416,7 @@ void prestogres_init_system_catalog()
 		buffer = strcpy_capped(buffer, bufend - buffer, ";");
 
 		if (buffer == NULL) {
-			ereport(ERROR, (errmsg("prestogres: presto_server, presto_user, presto_catalog or presto_schema is too long")));
+			ereport(ERROR, (errmsg("informixgres: inormix_server, presto_user, presto_catalog or presto_schema is too long")));
 			return;
 		}
 

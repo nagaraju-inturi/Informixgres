@@ -691,7 +691,7 @@ void prestogres_create_database_using_system_db(POOL_CONNECTION *frontend)
 			 system_db_info->info->password);
 
 	snprintf(sql, sizeof(sql),
-			 "select prestogres_init_database('%s', '%s', E'%s')",
+			 "select informix_init_database('%s', '%s', E'%s')",
 			 frontend->username, frontend->database, db_conninfo);
 
 	result = PQexec(system_db_info->pgconn, sql);

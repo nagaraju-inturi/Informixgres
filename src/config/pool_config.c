@@ -1881,7 +1881,7 @@ int pool_init_config(void)
 	pool_config->pool_passwd = "pool_passwd";
 
 	/* prestogres: initialize Presto session information declared at pool.h */
-	pool_config->presto_server = "";
+	pool_config->informix_server = "";
 	pool_config->presto_catalog = "";
 	pool_config->presto_schema = "";
 	pool_config->presto_external_auth_prog = NULL;
@@ -2649,8 +2649,8 @@ int pool_get_config(char *confpath, POOL_CONFIG_CONTEXT context)
 			pool_config->pool_passwd = str;
 		}
 
-		/* prestogres: presto_server */
-		else if (!strcmp(key, "presto_server") && CHECK_CONTEXT(INIT_CONFIG, context))
+		/* informixgres: informix_server */
+		else if (!strcmp(key, "informix_server") && CHECK_CONTEXT(INIT_CONFIG, context))
 		{
 			char *str;
 
@@ -2666,7 +2666,7 @@ int pool_get_config(char *confpath, POOL_CONFIG_CONTEXT context)
 				fclose(fd);
 				return(-1);
 			}
-			pool_config->presto_server = str;
+			pool_config->informix_server = str;
 		}
 		/* prestogres: presto_catalog */
 		else if (!strcmp(key, "presto_catalog") && CHECK_CONTEXT(INIT_CONFIG, context))

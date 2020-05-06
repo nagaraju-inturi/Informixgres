@@ -224,8 +224,8 @@ class StatementClient(object):
 
         while True:
             try:
-                #row = self.cur.fetchrow()
-                row = None
+                row = self.cur.fetchrow()
+                #row = None
             except Exception as e:
                 self.exception = e
                 print ('ERROR5: Nagaraju')
@@ -257,7 +257,8 @@ class Query(object):
     def start(cls, query, **options):
         ConStr = "SERVER=informix;DATABASE=test;HOST=127.0.0.1;SERVICE=60000;UID=informix;PWD=changeme;"
         try:
-            conn = dbapi2.connect( str(ConStr), str(''), str(''), str(''), str(''))
+            print options["server"]
+            conn = dbapi2.connect( str(options["server"]), str(''), str(''), str(''), str(''))
         except Exception as e:
             print ('ERROR: Connect failed')
             print ( e )

@@ -1,7 +1,7 @@
 
 create extension dblink;
 
-create or replace function prestogres_init_database(access_role text, target_db text, target_db_conninfo text)
+create or replace function informix_init_database(access_role text, target_db text, target_db_conninfo text)
 returns text as $CREATE$
 begin
     return dblink_exec(target_db_conninfo, E'do $INIT$ begin
@@ -15,12 +15,12 @@ begin
             create schema prestogres_catalog;
         end if;
 
-        create or replace function prestogres_catalog.start_presto_query(
+        create or replace function prestogres_catalog.start_informix_query(
             presto_server text, presto_user text, presto_catalog text, presto_schema text,
             function_name text, query text)
         returns void as $$
-            import prestogres
-            prestogres.start_presto_query(
+            import informix
+            informix.start_informix_query(
                 presto_server, presto_user, presto_catalog, presto_schema, function_name, query)
         $$ language plpythonu
         security definer;
@@ -29,8 +29,8 @@ begin
             presto_server text, presto_user text, presto_catalog text, presto_schema text,
             access_role text)
         returns void as $$
-            import prestogres
-            prestogres.setup_system_catalog(
+            import informix
+            informix.setup_system_catalog(
                 presto_server, presto_user, presto_catalog, presto_schema, access_role)
         $$ language plpythonu
         security definer;

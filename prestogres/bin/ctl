@@ -60,7 +60,7 @@ if command == "create":
     initdb_path = search_postgres_command("initdb")
     cmd = [initdb_path, "-U", "prestogres", "--no-locale", "-E", "UNICODE"] + args
     run_command(cmd)
-    with open("@@DATADIR@@/postgresql.conf") as conf:
+    with open("/usr/local/share/prestogres/postgresql.conf") as conf:
         with open(data_dir + "/postgresql.conf", "a") as pgconf:
             pgconf.write(conf.read())
     print ""
@@ -81,11 +81,11 @@ if command == "create":
     print "Configuration files are at:"
     print ""
     print "  * postgres: %s/postgresql.conf" % (data_dir)
-    print "  * pgpool: @@SYSCONFDIR@@/informix.conf"
+    print "  * pgpool: /usr/local/etc/informix.conf"
     print ""
 
 elif command == "migrate":
-    run_command(["psql -h 127.0.0.1 -U prestogres postgres < '@@DATADIR@@/setup.sql'"], shell=True)
+    run_command(["psql -h 127.0.0.1 -U prestogres postgres < '/usr/local/share/prestogres/setup.sql'"], shell=True)
 
 elif command == "pgpool":
     dirname = os.path.dirname(prog)
@@ -100,7 +100,7 @@ elif command == "postgres":
     if len(args) <= 1:
         usage()
     postgres_path = search_postgres_command("postgres")
-    cmd = ["env", "PYTHONPATH=@@DATADIR@@", postgres_path] + args
+    cmd = ["env", "PYTHONPATH=/usr/local/share/prestogres", postgres_path] + args
     exec_command(cmd)
 
 else:
