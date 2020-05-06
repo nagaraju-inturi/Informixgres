@@ -333,4 +333,6 @@ Informixgres checks `timezone` session variable and passes it to Presto (X-Prest
 ___
 
     Informixgres is licensed under Apache License, Version 2.0. Its based on Prestogres project. https://github.com/treasure-data/prestogres
+    Copyright (C) 2014 Sadayuki Furuhashi
+
 
