@@ -45,7 +45,7 @@ pgpool-II is originally a middleware to provide connection pool and load balanci
   * This function is implemented on PostgreSQL using PL/Python.
   * It gets list of tables from Presto, and runs CREATE TABLE for each tables.
   * Those created tables are empty, but clients can get the table schemas.
-* When the client runs a regular SELECT statement, the modified pgpool-II rewrites the query to run **SELECT * FROM fetch\_presto\_query\_results(...)** statement.
+* When the client runs a regular SELECT statement, the modified pgpool-II rewrites the query to run **SELECT * FROM fetch\_informix\_query\_results(...)** statement.
   * This function runs the original query on Presto and returns the results.
 * If the statement is not regular SELECT (such as SET, SELECT from system catalogs, etc.), pgpool-II simply forwards the statement to PostgreSQL without rewriting.
 
@@ -68,6 +68,7 @@ In fact, there're some more tricks. See [prestogres/pgsql/prestogres.py](prestog
     * SELECT
     * EXPLAIN
     * INSERT INTO
+    * UPDATE INTO
     * CREATE TABLE
     * CREATE VIEW
   * Not supported:
