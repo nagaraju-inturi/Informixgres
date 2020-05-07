@@ -63,7 +63,7 @@ In fact, there're some more tricks. See [prestogres/pgsql/prestogres.py](prestog
   * JDBC driver needs to set:
      * **protocolVersion=2** property
 * Temporary table is not supported
-* Some SQL commands of Presto don't work
+* Some SQL commands of Informix don't work
   * Supported:
     * SELECT
     * EXPLAIN
@@ -138,7 +138,7 @@ You need to run 2 server programs: pgpool-II and PostgreSQL.
 You can use `prestogres-ctl` command to setup & run them as following:
 
 ```sh
-# 1. Configure configuration file (at least presto_server parameter):
+# 1. Configure configuration file (at least informix_server parameter):
 $ vi /usr/local/etc/informix.conf
 
 # 2. Create a data directory:
@@ -155,7 +155,7 @@ $ prestogres-ctl migrate
 $ prestogres-ctl pgpool
 
 # 6. Finally, you can connect to pgpool-II using psql command.
-#    Database name ('hive') is name of a Presto catalog:
+#    Database name ('hive') is name of a Informix catalog:
 $ psql -h 127.0.0.1 -p 5439 -U presto hive
 ```
 
@@ -200,8 +200,6 @@ Please read [pgpool-II documentation](http://www.pgpool.net/docs/latest/pgpool-e
 Following parameters are unique to Informixgres:
 
 * **informix_server**: Python/ODBC URL for Informix Server.
-* **presto_catalog**: (optional) catalog name of Presto (such as `hive`, etc.). By default, login database name is used as the catalog name
-* **presto_schema**: (optional) schema name of Presto (such as `hive`, etc.). By default, login database name is used as the schema name
 * **presto_external_auth_prog**: (optional) path to an external authentication program used by `external` authentication moethd. See following *Authentication* section for details.
 
 You can overwrite these parameters for each connecting users (and databases) using informix\_hba.conf file. See also following *Authentication* section.
@@ -227,8 +225,8 @@ host    all       all     10.0.0.0/16,10.1.0.0/16  trust
 # require password authentication from 10.3.x.x
 host    all       all     10.3.0.0/16              md5
 
-# overwrite presto_server address and catalog name if the login database name is altdb
-host    altdb     all     0.0.0.0/0                md5           presto_server:alt.presto.example.com:8190,presto_catalog:hive
+# overwrite informix_server address and catalog name if the login database name is altdb
+host    altdb     all     0.0.0.0/0                md5           informix_server:alt.presto.example.com:8190,presto_catalog:hive
 
 # run external command to authenticate if login user name is myuser
 host    all       myuser  0.0.0.0/0                external      auth_prog:/opt/prestogres/auth.py
@@ -236,7 +234,7 @@ host    all       myuser  0.0.0.0/0                external      auth_prog:/opt/
 
 ### md5 method
 
-This authentication method uses a password file (**$prefix/etc/prestogres\_passwd**) to authenticate an user. You can use `prestogres passwd` command to add an user to this file:
+This authentication method uses a password file (**$prefix/etc/informix\_passwd**) to authenticate an user. You can use `informix passwd` command to add an user to this file:
 
 ```sh
 $ prestogres-pg_md5 -pm -u myuser
@@ -246,11 +244,6 @@ password: (enter password here)
 In informix\_hba.conf file, you can set following options to the OPTIONS field:
 
 * **informix_server**: Python and ODBC URL for Informix database server. URL of Informix coordinator, which overwrites `informix_servers` parameter in informix.conf.
-* **presto_catalog**: catalog name of Presto, which overwrites `presto_catalog` parameter in informix.conf.
-* **presto_schema**: schema name of Presto, which overwrites `presto_schema` parameter in informix.conf.
-* **presto_user**: user name to run queries on Presto (X-Presto-User). By default, login user name is used. Following `pg_user` parameter doesn't affect this parameter.
-* **pg_database**: (advanced) Overwrite database name on PostgreSQL. By default, login database name is used as-is. If this database does not exist on PostgreSQL, Informixgres automatically creates it.
-* **pg_user**: (advanced) Overwrite user name connecting to PostgreSQL. This value should be `prestogres` in most of cases. If you create another superuser on PostgreSQL manually, you may use this parameter.
 
 
 ### external method
@@ -273,12 +266,7 @@ address:IPADDR
 If you want to allow this connection, the program optionally prints parameters as following to STDOUT, and exists with status code 0:
 
 ```
-presto_server:PRESTO_SERVER_ADDRESS
-presto_catalog:PRESTO_CATALOG_NAME
-presto_schema:PRESTO_SCHEMA_NAME
-presto_user:USER_NAME
-pg_database:DATABASE
-pg_user:USER_NAME
+informix_server:INFORMIX_SERVER_ADDRESS
 
 ```
 
@@ -298,9 +286,9 @@ See [Authentication](#authentication) section for details.
 
 ### I can connect to Informixgres but cannot run any queries
 
-Informixgres gets all table information from Presto when you run the first query for each connection. If this initialization fails, all queries fail.
+Informixgres gets all table information from Informix when you run the first query for each connection. If this initialization fails, all queries fail.
 
-Informixgres runs following SQL on Presto to get table information. If this query fails on your Presto, Informixgres doesn't work.
+Informixgres runs following SQL on Informix to get table information. If this query fails on your Informix, Informixgres doesn't work.
 
 ```sql
 select table_schema, table_name, column_name, is_nullable, data_type
@@ -323,7 +311,7 @@ If you have interest in the detailed protocol specification: [PostgreSQL Fronten
 
 ### Time zone of timestamp type is wrong
 
-Informixgres checks `timezone` session variable and passes it to Presto (X-Presto-Time-Zone).
+Informixgres checks `timezone` session variable and passes it to Informix. 
 
 * To check timezone session variable: `SHOW timezone`
 * To change the timezone on a session: `SET timezone TO UTC`
